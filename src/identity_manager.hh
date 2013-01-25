@@ -43,7 +43,7 @@ class IdentityManager
     public:
         static IdentityManager & instance();
 
-        void load(const YAML::Node * node);
+        void load(const YAML::Node node);
         void setDefaultIdentity(const std::string & identity);
 
         const Identity * defaultIdentity() const;

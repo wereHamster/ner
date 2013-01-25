@@ -22,40 +22,47 @@
 #include "maildir.hh"
 #include "notmuch.hh"
 
-void operator>>(const YAML::Node & node, Identity & identity)
-{
-    node["name"] >> identity.name;
-    node["email"] >> identity.email;
 
-    /* Optional entries */
-    const YAML::Node * signatureNode = node.FindValue("signature");
-    const YAML::Node * sendCopyToSelfNode = node.FindValue("bcc");
-    const YAML::Node * sendNode = node.FindValue("send");
-    const YAML::Node * sentMailNode = node.FindValue("sent_mail");
+namespace YAML {
+    template<>
+    struct convert<Identity> {
+        static bool decode(const Node & node, Identity & identity) {
+            identity.name  = node["name"].as<std::string>();
+            identity.email = node["email"].as<std::string>();
 
-    if (signatureNode)
-        *signatureNode >> identity.signaturePath;
-    else
-        identity.signaturePath.clear();
+            /* Optional entries */
+            const YAML::Node signatureNode = node["signature"];
+            const YAML::Node sendCopyToSelfNode = node["bcc"];
+            const YAML::Node sendNode = node["send"];
+            const YAML::Node sentMailNode = node["sent_mail"];
 
-    if (sendCopyToSelfNode)
-        *sendCopyToSelfNode >> identity.sendCopyToSelf;
+            if (signatureNode)
+                identity.signaturePath = signatureNode.as<std::string>();
+            else
+                identity.signaturePath.clear();
 
-    if (sendNode)
-        *sendNode >> identity.sendCommand;
+            if (sendCopyToSelfNode.IsDefined())
+                identity.sendCopyToSelf = sendCopyToSelfNode.as<bool>();
 
-    std::string tagPrefix = "tag:the-ner.org,2010:";
+            if (sendNode.IsDefined())
+                identity.sendCommand = sendNode.as<std::string>();
 
-    identity.sentMail.reset();
+            std::string tagPrefix = "tag:the-ner.org,2010:";
 
-    if (sentMailNode)
-    {
-        if (sentMailNode->Tag() == tagPrefix + "maildir")
-        {
-            std::string sentMailPath = sentMailNode->to<std::string>();
-            identity.sentMail = std::make_shared<Maildir>(sentMailPath);
+            identity.sentMail.reset();
+
+            if (sentMailNode.IsDefined())
+            {
+                if (sentMailNode.Tag() == tagPrefix + "maildir")
+                {
+                    std::string sentMailPath = sentMailNode.as<std::string>();
+                    identity.sentMail = std::make_shared<Maildir>(sentMailPath);
+                }
+            }
+
+            return true;
         }
-    }
+    };
 }
 
 IdentityManager & IdentityManager::instance()
@@ -76,12 +83,12 @@ IdentityManager::~IdentityManager()
 {
 }
 
-void IdentityManager::load(const YAML::Node * node)
+void IdentityManager::load(const YAML::Node node)
 {
     _identities.clear();
 
-    if (node)
-        (*node) >> _identities;
+    if (node.IsDefined())
+        _identities = node.as<std::map<std::string, Identity>>();
     /* Otherwise, guess identities from notmuch config */
     else
     {
