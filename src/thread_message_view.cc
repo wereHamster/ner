@@ -56,6 +56,9 @@ ThreadMessageView::ThreadMessageView(const std::string & threadId, const View::G
 
     addHandledSequence("+",          std::bind(&ThreadMessageView::addTags, this));
     addHandledSequence("-",          std::bind(&ThreadMessageView::removeTags, this));
+    addHandledSequence("<C-h>",      std::bind(&ThreadMessageView::markHam, this));
+    addHandledSequence("<C-t>",      std::bind(&ThreadMessageView::markToggle, this));
+    addHandledSequence("<C-m>",      std::bind(&ThreadMessageView::clearMarks, this));
 
     addHandledSequence("r",          std::bind(&ThreadView::reply, &_threadView));
 
@@ -120,6 +123,31 @@ std::vector<std::string> ThreadMessageView::status() const
     std::copy(messageViewStatus.begin(), messageViewStatus.end(), std::back_inserter(mergedStatus));
 
     return mergedStatus;
+}
+
+void ThreadMessageView::markHam()
+{
+    std::string _messageId = _threadView.selectedMessage().id;
+    Message message = Notmuch::getMessage(_messageId);
+    message.addTag("ham");
+    nextMessage();
+}
+
+void ThreadMessageView::markToggle()
+{
+    std::string _messageId = _threadView.selectedMessage().id;
+    Message message = Notmuch::getMessage(_messageId);
+    message.addTag("toggle");
+    nextMessage();
+}
+
+void ThreadMessageView::clearMarks()
+{
+    std::string _messageId = _threadView.selectedMessage().id;
+    Message message = Notmuch::getMessage(_messageId);
+    message.removeTag("ham");
+    message.removeTag("toggle");
+    nextMessage();
 }
 
 void ThreadMessageView::addTags()

@@ -43,6 +43,10 @@ class ThreadMessageView : public View
         void addTags();
         void removeTags();
 
+        void markHam();
+        void markToggle();
+        void clearMarks();
+
     protected:
         void loadSelectedMessage();
 

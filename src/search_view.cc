@@ -55,6 +55,9 @@ SearchView::SearchView(const std::string & search, const View::Geometry & geomet
 
     addHandledSequence("+", std::bind(&SearchView::addTags, this));
     addHandledSequence("-", std::bind(&SearchView::removeTags, this));
+    addHandledSequence("<C-h>",      std::bind(&SearchView::markHam, this));
+    addHandledSequence("<C-t>",      std::bind(&SearchView::markToggle, this));
+    addHandledSequence("<C-r>",      std::bind(&SearchView::clearMarks, this));
 
     std::unique_lock<std::mutex> lock(_mutex);
     while (_threads.size() < getmaxy(_window) && _collecting)
@@ -320,6 +323,46 @@ void SearchView::collectThreads()
 
     /* For cases when there are no matching threads */
     _condition.notify_one();
+}
+
+void SearchView::markHam()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    if (_selectedIndex < _threads.size())
+    {
+        Thread & thread = _threads.at(_selectedIndex);
+        thread.addTag("ham");
+        next();
+        update();
+    }
+}
+
+void SearchView::markToggle()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    if (_selectedIndex < _threads.size())
+    {
+        Thread & thread = _threads.at(_selectedIndex);
+        thread.addTag("toggle");
+        next();
+        update();
+    }
+}
+
+void SearchView::clearMarks()
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    if (_selectedIndex < _threads.size())
+    {
+        Thread & thread = _threads.at(_selectedIndex);
+        thread.removeTag("ham");
+        thread.removeTag("toggle");
+        next();
+        update();
+    }
 }
 
 void SearchView::addTags()

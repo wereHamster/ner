@@ -46,6 +46,10 @@ class SearchView : public LineBrowserView
         void addTags();
         void removeTags();
 
+        void markHam();
+        void markToggle();
+        void clearMarks();
+
     protected:
         virtual int lineCount() const;
 
